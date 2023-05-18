@@ -1,5 +1,22 @@
 #!/bin/sh
 
+cleanupSoundCache() {
+    while true; do
+        printf "Would you like to remove all .sound.cache files? (Y/n): "
+        read -r REMOVE_SOUND_CACHE
+        REMOVE_SOUND_CACHE=$(echo "$REMOVE_SOUND_CACHE" | tr '[:upper:]' '[:lower:]')
+
+        if [ -z "$REMOVE_SOUND_CACHE" ] || [ "$REMOVE_SOUND_CACHE" = "y" ] || [ "$REMOVE_SOUND_CACHE" = "yes" ]; then
+            find . -type f -name "*.sound.cache" -print0 | xargs -0 rm 2>/dev/null
+            break
+        elif [ "$REMOVE_SOUND_CACHE" = "n" ] || [ "$REMOVE_SOUND_CACHE" = "no" ]; then
+            break
+        else
+            printf "Please provide a valid input\n"
+        fi
+    done
+}
+
 while true; do
     printf "\nEnter '(d)ownload' to download/update files, '(r)emove' to remove files or '(Q)uit' to quit:\n"
     read -r ACTION
@@ -74,7 +91,7 @@ while true; do
 
 
     else
-        [ "$ACTION" = "quit" ] || [ "$ACTION" = "q" ] || [ -z "$ACTION" ] && break
+        [ "$ACTION" = "quit" ] || [ "$ACTION" = "q" ] || [ -z "$ACTION" ] && cleanupSoundCache ; break
         printf "Invalid action. Please enter 'download', 'remove' or 'quit'.\n"
     fi
 
