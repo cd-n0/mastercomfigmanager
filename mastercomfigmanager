@@ -1,12 +1,14 @@
 #!/bin/sh
 
+# This function prompts the user to remove .sound.cache files
 cleanupSoundCache() {
     while true; do
         printf "Would you like to remove all .sound.cache files? (Y/n): "
         read -r REMOVE_SOUND_CACHE
-        REMOVE_SOUND_CACHE=$(echo "$REMOVE_SOUND_CACHE" | tr '[:upper:]' '[:lower:]')
+        REMOVE_SOUND_CACHE=$(printf "$REMOVE_SOUND_CACHE" | tr '[:upper:]' '[:lower:]')
 
         if [ -z "$REMOVE_SOUND_CACHE" ] || [ "$REMOVE_SOUND_CACHE" = "y" ] || [ "$REMOVE_SOUND_CACHE" = "yes" ]; then
+            # Find and remove all .sound.cache files
             find . -type f -name "*.sound.cache" -print0 | xargs -0 rm 2>/dev/null
             break
         elif [ "$REMOVE_SOUND_CACHE" = "n" ] || [ "$REMOVE_SOUND_CACHE" = "no" ]; then
@@ -17,33 +19,48 @@ cleanupSoundCache() {
     done
 }
 
+
+# Main script execution starts here
 while true; do
     printf "\nEnter '(d)ownload' to download/update files, '(r)emove' to remove files or '(Q)uit' to quit:\n"
     read -r ACTION
-    ACTION=$(echo "$ACTION" | tr '[:upper:]' '[:lower:]')
+    # Make the given input case insensitive
+    ACTION=$(printf "$ACTION" | tr '[:upper:]' '[:lower:]')
 
     if [ "$ACTION" = "download" ] || [ "$ACTION" = "d" ]; then
         printf "Getting latest release of mastercomfig\n"
+
+        # Retrieve the latest release information from GitHub API
         LATEST_RELEASE=$(curl -s https://api.github.com/repos/mastercomfig/mastercomfig/releases/latest)
         LATEST_RELEASE_NUMBER=$(printf "$LATEST_RELEASE" | grep -E ".*tag_name.*" | cut -d '"' -f 4)
         printf "Latest release is $LATEST_RELEASE_NUMBER\n"
 
+        # Extract the list of files available for download from the release
         LIST=$(printf "$LATEST_RELEASE" | grep ".*vpk" | cut -d : -f 2,3 | tr -d \")
 
+        # Separate the file names and corresponding URLs
+
+        # Since names and urls are right under each other we get them by using even and odd lines (sed command)
         FILE_LIST=$(printf "$LIST" | sed -n 'p;n' | tr -d ',' | tr -d ' ')
         FILE_COUNT=$(printf "$FILE_LIST" | wc -l)
+        # Since wc -l counts the number of newline characters we add 1 for the last element
         FILE_COUNT=$((FILE_COUNT + 1))
         URL_LIST=$(printf "$LIST" | sed -n 'n;p')
 
+        # Display the list of files with corresponding numbers for user selection
         printf "$FILE_LIST" | sed '=' | sed 'N; s/\n/. /'
-        printf "\nEnter the number(s) corresponding to the file(s) you want to download seperated by commas:\n"
+        printf "\nEnter the number(s) corresponding to the file(s) you want to download separated by commas:\n"
         read -r FILE_NUMBER
 
+        # Iterate over the selected file numbers and download the corresponding files
         for ELEMENT in $(printf "$FILE_NUMBER" | tr ',' ' '); do
+
+            # Check if the given number(s) is valid
             if [ "$ELEMENT" -ge 1 ] && [ "$ELEMENT" -le "$FILE_COUNT" ]; then
                 URL=$(printf "$URL_LIST" | sed -n ${ELEMENT}p )
                 NAME=$(printf "$FILE_LIST" | sed -n ${ELEMENT}p )
 
+                # Download the file using wget
                 if wget -q -O $NAME $URL; then
                     printf "Download completed for $NAME.\n"
                 else
@@ -57,8 +74,11 @@ while true; do
         done
 
     elif [ "$ACTION" = "remove" ] || [ "$ACTION" = "r" ] ; then
+
+        # Retrieve the list of files matching the pattern mastercomfig*.vpk
         FILE_LIST=$(ls -1 mastercomfig*.vpk 2>/dev/null)
         FILE_COUNT=$(printf "$FILE_LIST" | wc -l)
+        # Since wc -l counts the number of newline characters we add 1 for the last element
         FILE_COUNT=$((FILE_COUNT + 1))
 
         if [ -z "$FILE_LIST" ]; then
@@ -66,17 +86,20 @@ while true; do
             continue
         fi
 
+        # Display the list of downloaded files with corresponding numbers for user selection
         printf "\nFetching downloaded files:\n"
         printf "$FILE_LIST" | sed '=' | sed 'N; s/\n/. /'
 
-        printf "\nEnter the number(s) corresponding to the file(s) you want to remove seperated by commas:\n"
+        printf "\nEnter the number(s) corresponding to the file(s) you want to remove separated by commas:\n"
         read -r FILE_NUMBER
 
+        # Iterate over the selected file numbers and remove the corresponding files
         for ELEMENT in $(printf "$FILE_NUMBER" | tr ',' ' '); do
             if [ "$ELEMENT" -ge 1 ] && [ "$ELEMENT" -le "$FILE_COUNT" ]; then
                 NAME=$(printf "$FILE_LIST" | sed -n ${ELEMENT}p )
 
                 if [ -f "$NAME" ]; then
+                    # Remove the file
                     rm "$NAME"
                     printf "File $NAME removed.\n"
                 else
@@ -89,10 +112,9 @@ while true; do
             fi
         done
 
-
     else
+        # If the user prompts to quit, call the cleanupSoundCache function
         [ "$ACTION" = "quit" ] || [ "$ACTION" = "q" ] || [ -z "$ACTION" ] && cleanupSoundCache ; break
         printf "Invalid action. Please enter 'download', 'remove' or 'quit'.\n"
-    fi
-
-done
+            fi
+        done
