@@ -1,10 +1,11 @@
 #!/bin/sh
 
 while true; do
-    printf "\nEnter 'download' to download/update files, 'remove' to remove files or 'quit' to quit:\n"
+    printf "\nEnter '(d)ownload' to download/update files, '(r)emove' to remove files or '(Q)uit' to quit:\n"
     read -r ACTION
+    ACTION=$(echo "$ACTION" | tr '[:upper:]' '[:lower:]')
 
-    if [ "$ACTION" = "download" ]; then
+    if [ "$ACTION" = "download" ] || [ "$ACTION" = "d" ]; then
         printf "Getting latest release of mastercomfig\n"
         LATEST_RELEASE=$(curl -s https://api.github.com/repos/mastercomfig/mastercomfig/releases/latest)
         LATEST_RELEASE_NUMBER=$(printf "$LATEST_RELEASE" | grep -E ".*tag_name.*" | cut -d '"' -f 4)
@@ -38,7 +39,7 @@ while true; do
             fi
         done
 
-    elif [ "$ACTION" = "remove" ]; then
+    elif [ "$ACTION" = "remove" ] || [ "$ACTION" = "r" ] ; then
         FILE_LIST=$(ls -1 mastercomfig*.vpk 2>/dev/null)
         FILE_COUNT=$(printf "$FILE_LIST" | wc -l)
         FILE_COUNT=$((FILE_COUNT + 1))
@@ -73,7 +74,7 @@ while true; do
 
 
     else
-        [ "$ACTION" = "quit" ] && break
+        [ "$ACTION" = "quit" ] || [ "$ACTION" = "q" ] || [ -z "$ACTION" ] && break
         printf "Invalid action. Please enter 'download', 'remove' or 'quit'.\n"
     fi
 
