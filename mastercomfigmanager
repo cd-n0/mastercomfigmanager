@@ -52,17 +52,16 @@ while true; do
         printf "\nEnter the number(s) corresponding to the file(s) you want to download separated by commas:\n"
         read -r FILE_NUMBER
 
-        # Iterate over the selected file numbers and download the corresponding files
+        # Iterate over the selected file numbers and download the corresponding files concurrently
         for ELEMENT in $(printf "$FILE_NUMBER" | tr ',' ' '); do
-
             # Check if the given number(s) is valid
             if [ "$ELEMENT" -ge 1 ] && [ "$ELEMENT" -le "$FILE_COUNT" ]; then
-                URL=$(printf "$URL_LIST" | sed -n ${ELEMENT}p )
-                NAME=$(printf "$FILE_LIST" | sed -n ${ELEMENT}p )
-
-                # Download the file using wget
-                if wget -q -O $NAME $URL; then
-                    printf "Download completed for $NAME.\n"
+                URL=$(printf "$URL_LIST" | sed -n ${ELEMENT}p)
+                NAME=$(printf "$FILE_LIST" | sed -n ${ELEMENT}p)
+        
+                # Download the file using wget in the background
+                if wget -q -O $NAME $URL & then
+                    printf "Download initiated for $NAME.\n"
                 else
                     printf "Download failed for $NAME.\n"
                     continue
@@ -72,6 +71,10 @@ while true; do
                 continue
             fi
         done
+
+        # Wait for all the downloads to finish
+        wait
+        printf "All downloads completed.\n"
 
     elif [ "$ACTION" = "remove" ] || [ "$ACTION" = "r" ] ; then
 
